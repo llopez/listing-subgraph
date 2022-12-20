@@ -1,23 +1,26 @@
-type AdminChanged @entity(immutable: true) {
+type User @entity(immutable: false) {
   id: Bytes!
-  previousAdmin: Bytes! # address
-  newAdmin: Bytes! # address
+  itemsCount: BigInt!
+  votesCount: BigInt!
+  votes: [Vote!]! @derivedFrom(field: "user")
+  items: [Item!]! @derivedFrom(field: "author")
+}
+
+type Vote @entity(immutable: true) {
+  id: Bytes!
+  item: Item!
+  user: User!
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
 }
 
-type BeaconUpgraded @entity(immutable: true) {
-  id: Bytes!
-  beacon: Bytes! # address
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type Upgraded @entity(immutable: true) {
-  id: Bytes!
-  implementation: Bytes! # address
+type Item @entity(immutable: false) {
+  id: ID!
+  title: String!
+  votesCount: BigInt!
+  votes: [Vote!]! @derivedFrom(field: "item")
+  author: User!
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
