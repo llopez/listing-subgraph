@@ -1,5 +1,8 @@
-import { ItemAdded as ItemAddedEvent } from "../generated/ListingV2/ListingV2";
-import { Item, User } from "../generated/schema";
+import {
+  ItemAdded as ItemAddedEvent,
+  ItemVoted as ItemVotedEvent,
+} from "../generated/ListingV2/ListingV2";
+import { Item, User, Vote } from "../generated/schema";
 import { BIG_INT_ONE, BIG_INT_ZERO } from "./utils/constants";
 
 export function handleItemAdded(event: ItemAddedEvent): void {
@@ -25,5 +28,43 @@ export function handleItemAdded(event: ItemAddedEvent): void {
   item.blockNumber = event.block.number;
   item.blockTimestamp = event.block.timestamp;
   item.transactionHash = event.transaction.hash;
+  item.save();
+}
+
+export function handleItemVoted(event: ItemVotedEvent): void {
+  const id = event.params.id;
+  const _user = event.address;
+
+  const item = Item.load(id.toString());
+
+  if (!item) return;
+
+  let user = User.load(_user);
+
+  if (!user) {
+    user = new User(_user);
+    user.itemsCount = BIG_INT_ZERO;
+    user.votesCount = BIG_INT_ZERO;
+  }
+
+  user.votesCount = user.votesCount.plus(BIG_INT_ONE);
+
+  user.save();
+
+  const voteId = _user
+    .toHexString()
+    .concat("-")
+    .concat(id.toString());
+
+  const vote = new Vote(voteId);
+  vote.item = item.id;
+  vote.user = _user;
+  vote.blockNumber = event.block.number;
+  vote.blockTimestamp = event.block.timestamp;
+  vote.transactionHash = event.transaction.hash;
+  vote.save();
+
+  item.votesCount = item.votesCount.plus(BIG_INT_ONE);
+
   item.save();
 }

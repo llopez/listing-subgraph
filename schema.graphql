@@ -7,7 +7,7 @@ type User @entity(immutable: false) {
 }
 
 type Vote @entity(immutable: true) {
-  id: Bytes!
+  id: ID!
   item: Item!
   user: User!
   blockNumber: BigInt!
