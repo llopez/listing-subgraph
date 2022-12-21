@@ -9,7 +9,7 @@ type User @entity(immutable: false) {
 type Vote @entity(immutable: true) {
   id: ID!
   item: Item!
-  user: User!
+  user: User # optional to maintain backward compatibility with ListingV2
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!

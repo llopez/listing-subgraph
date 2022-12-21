@@ -7,8 +7,16 @@ import {
   beforeEach,
 } from "matchstick-as/assembly/index";
 import { Address, BigInt } from "@graphprotocol/graph-ts";
-import { handleItemAdded, handleItemVoted } from "../src/listing-v2";
-import { createItemAddedEvent, createItemVotedEvent } from "./listing-v2-utils";
+import {
+  handleItemAdded,
+  handleItemRemoved,
+  handleItemVoted,
+} from "../src/listing-v2";
+import {
+  createItemAddedEvent,
+  createItemRemovedEvent,
+  createItemVotedEvent,
+} from "./listing-v2-utils";
 import { Item, User } from "../generated/schema";
 import { BIG_INT_ONE, BIG_INT_ZERO } from "../src/utils/constants";
 
@@ -35,135 +43,72 @@ describe("ListingV2", () => {
       item.save();
     });
 
-    describe("When new user", () => {
-      test("Item updated: [votesCount]", () => {
-        const id = BigInt.fromI32(1);
-        const event = createItemVotedEvent(id);
-        handleItemVoted(event);
-        assert.fieldEquals("Item", "1", "votesCount", "1");
-      });
-      test("User created and update [votesCount]", () => {
-        const id = BigInt.fromI32(1);
-        const event = createItemVotedEvent(id);
-        event.address = Address.fromString(
-          "0x0000000000000000000000000000000000000002"
-        );
-        handleItemVoted(event);
-        assert.entityCount("User", 1);
-        assert.fieldEquals(
-          "User",
-          event.address.toHexString(),
-          "votesCount",
-          "1"
-        );
-      });
-      test("Vote created", () => {
-        const id = BigInt.fromI32(1);
-        const event = createItemVotedEvent(id);
-        event.address = Address.fromString(
-          "0x0000000000000000000000000000000000000002"
-        );
-        handleItemVoted(event);
-
-        const voteId = event.address
-          .toHexString()
-          .concat("-")
-          .concat(id.toString());
-
-        assert.entityCount("Vote", 1);
-        assert.fieldEquals("Vote", voteId, "item", id.toString());
-        assert.fieldEquals("Vote", voteId, "user", event.address.toHexString());
-        assert.fieldEquals(
-          "Vote",
-          voteId,
-          "blockNumber",
-          event.block.number.toString()
-        );
-        assert.fieldEquals(
-          "Vote",
-          voteId,
-          "blockTimestamp",
-          event.block.timestamp.toString()
-        );
-        assert.fieldEquals(
-          "Vote",
-          voteId,
-          "transactionHash",
-          event.transaction.hash.toHexString()
-        );
-      });
+    test("Item updated: [votesCount]", () => {
+      const id = BigInt.fromI32(1);
+      const event = createItemVotedEvent(id);
+      handleItemVoted(event);
+      assert.fieldEquals("Item", "1", "votesCount", "1");
     });
 
-    describe("When recurring user", () => {
-      beforeEach(() => {
-        const address = Address.fromString(
-          "0x0000000000000000000000000000000000000002"
-        );
-        const user = new User(address);
-        user.votesCount = BIG_INT_ONE;
-        user.itemsCount = BIG_INT_ZERO;
-        user.save();
-      });
+    test("Vote created", () => {
+      const id = BigInt.fromI32(1);
+      const event = createItemVotedEvent(id);
+      event.address = Address.fromString(
+        "0x0000000000000000000000000000000000000002"
+      );
+      handleItemVoted(event);
 
-      test("Item updated: [votesCount]", () => {
-        const id = BigInt.fromI32(1);
-        const event = createItemVotedEvent(id);
-        handleItemVoted(event);
-        assert.fieldEquals("Item", "1", "votesCount", "1");
-      });
+      const voteId =
+        event.transaction.hash.toHex() + "-" + event.logIndex.toString();
 
-      test("Vote created", () => {
-        const id = BigInt.fromI32(1);
-        const event = createItemVotedEvent(id);
-        event.address = Address.fromString(
-          "0x0000000000000000000000000000000000000002"
-        );
-        handleItemVoted(event);
+      assert.entityCount("Vote", 1);
+      assert.fieldEquals("Vote", voteId, "item", id.toString());
+      assert.fieldEquals(
+        "Vote",
+        voteId,
+        "blockNumber",
+        event.block.number.toString()
+      );
+      assert.fieldEquals(
+        "Vote",
+        voteId,
+        "blockTimestamp",
+        event.block.timestamp.toString()
+      );
+      assert.fieldEquals(
+        "Vote",
+        voteId,
+        "transactionHash",
+        event.transaction.hash.toHexString()
+      );
+    });
+  });
 
-        const voteId = event.address
-          .toHexString()
-          .concat("-")
-          .concat(id.toString());
+  describe("handleItemRemoved", () => {
+    beforeEach(() => {
+      const id = BigInt.fromI32(1);
+      const author = Address.fromString(
+        "0x0000000000000000000000000000000000000001"
+      );
+      const item = new Item(id.toString());
+      item.title = "Item #1";
+      item.votesCount = BIG_INT_ZERO;
+      item.author = author;
+      item.blockNumber = BigInt.fromI32(100);
+      item.blockTimestamp = BigInt.fromI32(1001);
+      item.transactionHash = Address.fromString(
+        "0x0000000000000000000000000000000000001111"
+      );
+      item.save();
+    });
 
-        assert.entityCount("Vote", 1);
-        assert.fieldEquals("Vote", voteId, "item", id.toString());
-        assert.fieldEquals("Vote", voteId, "user", event.address.toHexString());
-        assert.fieldEquals(
-          "Vote",
-          voteId,
-          "blockNumber",
-          event.block.number.toString()
-        );
-        assert.fieldEquals(
-          "Vote",
-          voteId,
-          "blockTimestamp",
-          event.block.timestamp.toString()
-        );
-        assert.fieldEquals(
-          "Vote",
-          voteId,
-          "transactionHash",
-          event.transaction.hash.toHexString()
-        );
-      });
+    test("Item removed", () => {
+      const id = BigInt.fromI32(1);
+      const event = createItemRemovedEvent(id);
 
-      test("User updates [votesCount]", () => {
-        const id = BigInt.fromI32(1);
-        const event = createItemVotedEvent(id);
-        event.address = Address.fromString(
-          "0x0000000000000000000000000000000000000002"
-        );
-        handleItemVoted(event);
+      handleItemRemoved(event);
 
-        assert.entityCount("User", 1);
-        assert.fieldEquals(
-          "User",
-          event.address.toHexString(),
-          "votesCount",
-          "2"
-        );
-      });
+      assert.notInStore("Item", id.toString());
     });
   });
 

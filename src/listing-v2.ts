@@ -1,9 +1,17 @@
+import { BigInt, store } from "@graphprotocol/graph-ts";
 import {
   ItemAdded as ItemAddedEvent,
   ItemVoted as ItemVotedEvent,
+  ItemRemoved as ItemRemovedEvent,
 } from "../generated/ListingV2/ListingV2";
 import { Item, User, Vote } from "../generated/schema";
 import { BIG_INT_ONE, BIG_INT_ZERO } from "./utils/constants";
+
+export function handleItemRemoved(event: ItemRemovedEvent): void {
+  const id = event.params.id;
+
+  store.remove("Item", id.toString());
+}
 
 export function handleItemAdded(event: ItemAddedEvent): void {
   const id = event.params.id;
@@ -32,33 +40,20 @@ export function handleItemAdded(event: ItemAddedEvent): void {
 }
 
 export function handleItemVoted(event: ItemVotedEvent): void {
+  // guard clause: ListingV2 endBlock
+  if (event.block.number.ge(BigInt.fromI32(8176478))) return;
+
   const id = event.params.id;
-  const _user = event.address;
 
   const item = Item.load(id.toString());
 
   if (!item) return;
 
-  let user = User.load(_user);
-
-  if (!user) {
-    user = new User(_user);
-    user.itemsCount = BIG_INT_ZERO;
-    user.votesCount = BIG_INT_ZERO;
-  }
-
-  user.votesCount = user.votesCount.plus(BIG_INT_ONE);
-
-  user.save();
-
-  const voteId = _user
-    .toHexString()
-    .concat("-")
-    .concat(id.toString());
+  const voteId =
+    event.transaction.hash.toHex() + "-" + event.logIndex.toString();
 
   const vote = new Vote(voteId);
   vote.item = item.id;
-  vote.user = _user;
   vote.blockNumber = event.block.number;
   vote.blockTimestamp = event.block.timestamp;
   vote.transactionHash = event.transaction.hash;

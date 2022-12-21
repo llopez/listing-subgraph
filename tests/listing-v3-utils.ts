@@ -3,8 +3,7 @@ import { ethereum, Address, BigInt } from "@graphprotocol/graph-ts";
 import {
   ItemAdded as ItemAddedEvent,
   ItemVoted as ItemVotedEvent,
-  ItemRemoved as ItemRemovedEvent,
-} from "../generated/ListingV2/ListingV2";
+} from "../generated/ListingV3/ListingV3";
 
 export function createItemAddedEvent(
   id: BigInt,
@@ -28,7 +27,10 @@ export function createItemAddedEvent(
   return event;
 }
 
-export function createItemVotedEvent(id: BigInt): ItemVotedEvent {
+export function createItemVotedEvent(
+  id: BigInt,
+  user: Address
+): ItemVotedEvent {
   let event = changetype<ItemVotedEvent>(newMockEvent());
 
   event.parameters = new Array();
@@ -37,16 +39,8 @@ export function createItemVotedEvent(id: BigInt): ItemVotedEvent {
     new ethereum.EventParam("id", ethereum.Value.fromUnsignedBigInt(id))
   );
 
-  return event;
-}
-
-export function createItemRemovedEvent(id: BigInt): ItemRemovedEvent {
-  let event = changetype<ItemRemovedEvent>(newMockEvent());
-
-  event.parameters = new Array();
-
   event.parameters.push(
-    new ethereum.EventParam("id", ethereum.Value.fromUnsignedBigInt(id))
+    new ethereum.EventParam("user", ethereum.Value.fromAddress(user))
   );
 
   return event;
