@@ -3,37 +3,12 @@ schema:
   file: ./schema.graphql
 dataSources:
   - kind: ethereum
-    name: ListingV2
-    network: goerli
-    source:
-      address: "0x576E4df9f9df070e0ae7B4A8f920C814a92eFdB0"
-      abi: ListingV2
-      startBlock: 8009009
-    mapping:
-      kind: ethereum/events
-      apiVersion: 0.0.7
-      language: wasm/assemblyscript
-      entities:
-        - Item
-        - User
-      abis:
-        - name: ListingV2
-          file: ./abis/ListingV2.json
-      eventHandlers:
-        - event: ItemAdded(uint256,string,address)
-          handler: handleItemAdded
-        - event: ItemVoted(uint256)
-          handler: handleItemVoted
-        - event: ItemRemoved(uint256)
-          handler: handleItemRemoved
-      file: ./src/listing-v2.ts
-  - kind: ethereum
     name: ListingV3
     network: goerli
     source:
-      address: "0x576E4df9f9df070e0ae7B4A8f920C814a92eFdB0"
+      address: "0xA3d8CD32d1C45f452682421B7d89bD523Af347b6"
       abi: ListingV3
-      startBlock: 8176478
+      startBlock: 8213227
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -41,10 +16,15 @@ dataSources:
       entities:
         - User
         - Vote
+        - Item
       abis:
         - name: ListingV3
           file: ./abis/ListingV3.json
       eventHandlers:
+        - event: ItemAdded(uint256,string,address)
+          handler: handleItemAdded
         - event: ItemVoted(uint256,address)
           handler: handleItemVoted
+        - event: ItemRemoved(uint256)
+          handler: handleItemRemoved
       file: ./src/listing-v3.ts
